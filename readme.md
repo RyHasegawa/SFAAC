@@ -15,7 +15,7 @@ AAC is a synthetic corpus with templates, and formulas with the same complexity 
 Each file is JSON Lines, with one Evaluation Pair per line. Newly added keys in SFAAC are following:
 
 - `num_atoms_CC`: the number of atoms in the conclusion's consequent of the text., one of `0`, `1`, or `2`. Main annotation.
-- `final_atom_neg`: the negation of the final atom, either `positive` or `negative. Main annotation.
+- `final_atom_neg`: the negation of the final atom, either `positive` or `negative`. Main annotation.
 - `evaluation_text`: Input text for evaluation.
 - `gold_label`: gold label of `evaluation_text`, either `true` or `false`.
 - `Qwen3`: whether the item is used or not with Qwen3 in our paper.
