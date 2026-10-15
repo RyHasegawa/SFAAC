@@ -7,25 +7,33 @@ import argparse
 
 from src.batch_api import call_client
 from src.solver_output import parse_premises_conclusion
-from src.utils import build_experiment_setting_name, read_jsonl
+from src.utils import (
+    build_experiment_setting_name,
+    ensure_parent_directory,
+    filter_qwen3_records,
+    read_jsonl,
+)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--prompt_style', required=True, type=str)
     parser.add_argument('--model_name', required=True, type=str)
     parser.add_argument('--data_dir', required=True, type=str)
+    parser.add_argument('--qwen3-only', action='store_true')
     args = parser.parse_args()
 
     model_name = args.model_name
     prompt_style = args.prompt_style
     experiment_setting_name = build_experiment_setting_name(
-        model_name, prompt_style, args.data_dir
+        model_name, prompt_style, args.data_dir, args.qwen3_only
     )
     file_name_cache = f'cache/cache_batch_{experiment_setting_name}.cache'
 
     #バッチ関連のファイル名
     batch_id_txt = f"batch_input/batch_id_{experiment_setting_name}.txt" # 確認用にbatchidを保存
     output_json = f'output_json/output_{experiment_setting_name}.jsonl'
+    ensure_parent_directory(file_name_cache)
+    ensure_parent_directory(output_json)
 
     #####  ここからが実行コード  #####
 
@@ -117,7 +125,7 @@ def main():
         #print(results_only_content)
         #出力results_only_contentを元データと合体させてjsonlで保存する
         #元データ rawdata_path = 'extracted_data_test.jsonl'
-        jsonl_data = read_jsonl(args.data_dir)
+        jsonl_data = filter_qwen3_records(read_jsonl(args.data_dir), args.qwen3_only)
         all_list = []
         error_count = 0
         if len(jsonl_data) == len(results_only_content):

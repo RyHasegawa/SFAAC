@@ -8,7 +8,12 @@ import datetime
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.utils import build_experiment_setting_name, read_jsonl
+from src.utils import (
+    build_experiment_setting_name,
+    ensure_parent_directory,
+    filter_qwen3_records,
+    read_jsonl,
+)
 
 
 def main():
@@ -19,11 +24,12 @@ def main():
     parser.add_argument('--prompt_style', required=True, type=str)
     parser.add_argument('--model_name', required=True, type=str)
     parser.add_argument('--data_dir', required=True, type=str)
+    parser.add_argument('--qwen3-only', action='store_true')
     #parser.add_argument('--metrics_save_dir', default='./output', type=str)
     #parser.add_argument('--train_data_path', type=str)
     args = parser.parse_args()
 
-    prompt_config_path = "config/prompts.toml"
+    prompt_config_path = "evaluation/config/prompts.toml"
 
     model_name = args.model_name
     print(f'model_name: {model_name}')
@@ -49,15 +55,16 @@ def main():
     user_text     = prompt_config_all[prompt_style]['user']
     assistant_text = prompt_config_all[prompt_style]['assistant']
     #jsonデータ読み込み
-    jsonl_data = read_jsonl(args.data_dir)
+    jsonl_data = filter_qwen3_records(read_jsonl(args.data_dir), args.qwen3_only)
     #print(jsonl_data)
 
     experiment_setting_name = build_experiment_setting_name(
-        model_name, prompt_style, args.data_dir
+        model_name, prompt_style, args.data_dir, args.qwen3_only
     )
 
     # 出力JSON
     file_name_json = f'output_json/raw_output_{experiment_setting_name}.jsonl'
+    ensure_parent_directory(file_name_json)
 
     output_json_list = []
     for number, data in enumerate(jsonl_data):
@@ -69,7 +76,7 @@ def main():
         print(number)
         data['premise_raw'] = data.pop('premise')
         data['conclusion_raw'] = data.pop('conclusion')
-        prompt = data['prompt']
+        prompt = data['evaluation_text']
         messages = [{"role": "system", "content": system_text},
                     {"role": "user", "content": user_text},
                     {"role": "assistant", "content": assistant_text},

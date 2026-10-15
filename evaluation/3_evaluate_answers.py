@@ -9,7 +9,7 @@ from src.solver_evaluation import (
     classify_entailment_prover9,
     classify_from_premises,
 )
-from src.utils import build_experiment_setting_name
+from src.utils import build_experiment_setting_name, ensure_parent_directory
 
 
 def balance_trailing_parens(text: str) -> str:
@@ -42,6 +42,7 @@ def main():
     parser.add_argument('--prompt_style', required=True, type=str)
     parser.add_argument('--model_name', required=True, type=str)
     parser.add_argument('--data_dir', required=True, type=str)
+    parser.add_argument('--qwen3-only', action='store_true')
     parser.add_argument(
         '--normalize-solver-output',
         action='store_true',
@@ -53,10 +54,11 @@ def main():
     model_name = args.model_name
     prompt_style = args.prompt_style
     experiment_setting_name = build_experiment_setting_name(
-        model_name, prompt_style, args.data_dir
+        model_name, prompt_style, args.data_dir, args.qwen3_only
     )
     file_name_json = f'output_json/output_{experiment_setting_name}.jsonl'
     output_name_csv = f'output_csv/output_{experiment_setting_name}.csv'
+    ensure_parent_directory(output_name_csv)
 
 
     # jsonl ファイルの読み込み
@@ -98,7 +100,7 @@ def main():
                 ans_dict = {"Answer": "NotKnownError"}
                 record = {**record, **ans_dict}
             ans_list.append(record['Answer'].lower())
-            gold_list.append(record['correctness of the prompt'].lower())
+            gold_list.append(record['gold_label'].lower())
             if 'aac' in args.data_dir:
                 category_id_list.append(record["scheme_id"])
 

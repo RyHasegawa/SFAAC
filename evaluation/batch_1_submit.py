@@ -6,7 +6,12 @@ import os
 import tomllib
 import textwrap
 
-from src.utils import build_experiment_setting_name, read_jsonl
+from src.utils import (
+    build_experiment_setting_name,
+    ensure_parent_directory,
+    filter_qwen3_records,
+    read_jsonl,
+)
 from src.batch_api import add_to_batch_if_needed, execute_batch, load_hash_json
 
 
@@ -15,9 +20,10 @@ def main():
     parser.add_argument('--prompt_style', required=True, type=str)
     parser.add_argument('--model_name', required=True, type=str)
     parser.add_argument('--data_dir', required=True, type=str)
+    parser.add_argument('--qwen3-only', action='store_true')
     args = parser.parse_args()
 
-    prompt_config_path = "config/prompts.toml"
+    prompt_config_path = "evaluation/config/prompts.toml"
 
     model_name = args.model_name
     prompt_style = args.prompt_style
@@ -55,11 +61,11 @@ def main():
     user_text     = textwrap.dedent(prompt_config_all[prompt_style]['user'])
     assistant_text = textwrap.dedent(prompt_config_all[prompt_style]['assistant'])
     #jsonデータ読み込み
-    jsonl_data = read_jsonl(args.data_dir)
+    jsonl_data = filter_qwen3_records(read_jsonl(args.data_dir), args.qwen3_only)
     #print(jsonl_data)
 
     experiment_setting_name = build_experiment_setting_name(
-        model_name, prompt_style, args.data_dir
+        model_name, prompt_style, args.data_dir, args.qwen3_only
     )
 
 	## キャッシュ
@@ -75,10 +81,12 @@ def main():
     #バッチ関連のファイル名
     batch_input_file = f"batch_input/batch_input_{experiment_setting_name}.jsonl" #モデルに投げるバッチファイルの名前
     batch_id_txt = f"batch_input/batch_id_{experiment_setting_name}.txt" # 確認用にbatchidを保存
+    ensure_parent_directory(batch_input_file)
+    ensure_parent_directory(file_name_cache)
 
     prompt_list = []
     for number, data in enumerate(jsonl_data):
-        prompt = data['prompt']
+        prompt = data['evaluation_text']
         prompt_list.append(prompt)
 
     batch_requests = []

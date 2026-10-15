@@ -6,7 +6,7 @@ import re
 from typing import Any, Optional, Tuple
 
 from src.solver_output import parse_premises_conclusion
-from src.utils import build_experiment_setting_name
+from src.utils import build_experiment_setting_name, ensure_parent_directory
 
 def _scan_json_string_literal(s: str, start_quote_idx: int) -> Tuple[str, int]:
     """
@@ -163,17 +163,19 @@ def main():
     parser.add_argument('--prompt_style', required=True, type=str)
     parser.add_argument('--model_name', required=True, type=str)
     parser.add_argument('--data_dir', required=True, type=str)
+    parser.add_argument('--qwen3-only', action='store_true')
     #parser.add_argument('--metrics_save_dir', default='./output', type=str)
     #parser.add_argument('--train_data_path', type=str)
     args = parser.parse_args()
     model_name = args.model_name
     prompt_style = args.prompt_style
     experiment_setting_name = build_experiment_setting_name(
-        model_name, prompt_style, args.data_dir
+        model_name, prompt_style, args.data_dir, args.qwen3_only
     )
 
     file_name_json = f'output_json/raw_output_{experiment_setting_name}.jsonl'
     output_name_json = f'output_json/output_{experiment_setting_name}.jsonl'
+    ensure_parent_directory(output_name_json)
 
     update_jsonl_merge_extracted_json(
         in_path=file_name_json,
