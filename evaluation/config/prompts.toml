@@ -1,0 +1,572 @@
+[aac_naive]
+system    = """You are a helpful assistant designed to output JSON, and also an expert in logic. Your task is to answer a first-order-logic problem and output the answer with true or false in JSON format. Please save the results in {"Answer": str}."""
+user      = """It is not always easy to see who is related to whom -- and in which ways. The following argument pertains to this question: Elsa is a sister of Mary. Next, everyone who is a sister of Mary is a classmate of Anne. Therefore, Elsa is a classmate of Anne."""
+assistant = """{"Answer": "true"}"""
+
+[aac_CoT]
+system    = """You are a helpful assistant designed to output JSON, and also an expert in logic. Your task is to answer a first-order-logic problem and output the answer with true or false in JSON format. Please save the results in {"Reasoning": str, "Answer": str}."""
+user      = """It is not always easy to see who is related to whom -- and in which ways. The following argument pertains to this question: Elsa is a sister of Mary. Next, everyone who is a sister of Mary is a classmate of Anne. Therefore, Elsa is a classmate of Anne."""
+assistant = """{"Reasoning": Let's think step by step. We want to evaluate if Elsa is a classmate of Anne. First, it is true that Elsa is a sister of Mary. Then we know that everyone who is a sister of Mary is a classmate of Anne. Thus, the statement that Elsa is a classmate of Anne is true. "Answer": "true"}"""
+
+[aac_CoT_Logic]
+system    = """You are a helpful assistant designed to output JSON, and also an expert in logic. Your task is to answer a first-order-logic problem and output the answer with true or false in JSON format. You must formalize the natural language argument into logic formulas, solve them, and output the answer. Please save the results in {"Reasoning": str, "Answer": str}.
+
+The rule of logic formula is as follows:
+
+#1 Function and terms
+You should use a single lowercase only when the term is a variable.
+correct: human(x), human(Socrates)
+
+#2 Logic operators
+You can use following logic operators:
+Not: ~A(x)
+And: A(x) & B(x)
+Or: A(x) | B(x)
+Implies: A(x) -> B(x)
+Biconditional: A(x) <-> B(x)
+Xor: (A(x) | B(x)) & ~(A(x) & B(x))
+Nor: ~(A(x) | B(x))
+Nand: ~(A(x) & B(x))
+
+#3 Quantifier
+You should use these two quantifiers:
+Universal: ∀x(A(x))
+Existential: ∃x(A(x))
+
+Every variable that appears must be bound by a quantifier.
+Any formula containing a variable must be wrapped in a quantifier.
+
+correct: ∀x(human(x) -> mortal(x))
+correct: ∃x(human(x) -> swim(x))
+
+If a formula contains only constants, do not use any quantifier.
+correct: sister(Elsa, Mary)
+#4 Task
+Formalize the natural language argument into logic formulas, solve them, and output the answer. Please save the results in {"Reasoning": str, "Answer": str}.
+"""
+user      = """It is not always easy to see who is related to whom -- and in which ways. The following argument pertains to this question: Elsa is a sister of Mary. Next, everyone who is a sister of Mary is a classmate of Anne. Therefore, Elsa is a classmate of Anne."""
+assistant = '''
+{"Reasoning": """
+1.	formalization. 
+Premise 1. Elsa is a sister of Mary: Sister(Elsa, Mary). 
+Premise 2. Everyone who is a sister of Mary is a classmate of Anne: ∀x(sister(x, Mary) -> classmate(x, Anne)). 
+Conclusion. Elsa is a classmate of Anne: classmate(Elsa, Anne). 
+2.	solving.
+From Premise 1 and Premise 2: classmate(Elsa, Anne). Therefore, the conclusion follows from the premises, so the answer is true.
+"""
+"Answer": "true"}
+'''
+
+
+[aac_z3]
+system    = '''
+You are a helpful assistant designed, and an expert in first-order logic.
+Your task is to convert a natural language argument into Z3Py.
+You must follow all rules below.
+
+#1 Output format
+
+"""
+premises: 
+And(
+formula1,
+formula2,
+…
+)
+
+conclusion: 
+formula
+"""
+
+Rules:
+1 No explanation. No comments. No extra keys.
+2 And() includes all formula in premises.
+
+#2 Terms
+Representation: 
+Variable:x
+Constant:Socrates
+
+Rules:
+1 Variables: lowercase identifiers.
+2 Constants: Underscores instead of spaces.
+3 Do not put raw strings, predicates, formulas, or operators inside args.
+
+
+#3 Predicates
+Representation: predicate(term, …)
+
+Rules:
+1 Predicate names lowercase_with_underscores.
+2 Arity must match meaning.
+
+Correct:
+human(x)
+human(Socrates)
+
+
+#4 Logical operators
+Negation:
+Not(formula)
+
+Conjunction:
+And(formula, …)
+
+Disjunction:
+Or(formula, …)
+
+Implication:
+Implies(formula1, formula2)
+
+Biconditional:
+formula1 == formula2
+
+Exclusive or: 
+Xor(<formula1>, <formula2>)
+
+Nor: 
+Not(Or(<formula1>, <formula2>))
+
+Nand: 
+Not(And(<formula1>, <formula2>))
+
+Rules:
+Operators take formulas, not terms.
+
+
+#5 Quantifiers
+The only valid quantifier forms are:
+
+Universal:
+ForAll(x, formula)
+
+Existential:
+Exists(x, formula)
+
+Every variable that appears must be bound by a quantifier.
+Any formula containing a variable must be wrapped in a quantifier.
+
+Correct:
+ForAll(x, Implies(human(x), mortal(x)))
+
+Exists(x, Implies(human(x), swim(x)))
+
+
+#6 Task
+Convert the natural language argument into Z3Py following these rules.
+• Output format is valid Z3Py only.
+• No explanation.
+• No comments.
+• No trailing commas.
+
+'''
+user      = """It is not always easy to see who is related to whom -- and in which ways. The following argument pertains to this question: Elsa is a sister of Mary. Next, everyone who is a sister of Mary is a classmate of Anne. Therefore, Elsa is a classmate of Anne."""
+assistant = """
+premises:
+And(
+    sister(Elsa, Mary),
+    ForAll(x, Implies(sister(x, Mary), classmate(x, Anne))),
+    Exists(x, classmate(x, Anne)),
+    Exists(x, sister(x, Mary))
+)
+
+conclusion:
+classmate(Elsa, Anne)
+"""
+
+[aac_prover9]
+system    = '''
+You are a helpful assistant, and an expert in first-order logic.
+Your task is to convert a natural language argument into Prover9 format.
+You must follow all rules below.
+
+#1 Output format
+
+"""
+formulas(assumptions).
+  <one formula per line, ending with '.'>
+end_of_list.
+
+formulas(goals).
+  <one formula per line, ending with '.'>
+end_of_list.
+"""
+
+Rules:
+1 No explanation. No comments. No extra text.
+2 Put every premise in formulas(assumptions). Do not omit 'formulas(assumptions).' and 'end_of_list.'
+3 Put the conclusion in formulas(goals). Do not omit 'formulas(goals).' and 'end_of_list.'
+4 Each line is ONE formula and MUST end with '.'.
+5 Use only ASCII characters.
+
+#2 Terms
+Representation:
+Variable: x
+Constant: Socrates
+
+Rules:
+1 Variables: lowercase identifiers.
+2 Constants: underscores instead of spaces.
+3 Do not use quoted strings.
+
+#3 predicate
+predicate(term, ...)
+
+Rules:
+1 Predicate names: lowercase_with_underscores.
+2 Arity must match meaning and be consistent.
+
+Examples:
+   human(x).
+   sister(Elsa, Mary).
+
+#4 Logical operators
+Negation:
+-(formula)
+
+Conjunction:
+(formula & formula & ...)
+
+Disjunction:
+(formula | formula | ...)
+
+Implication:
+(formula -> formula)
+
+Biconditional:
+(formula <-> formula)
+
+Rules:
+1 Operators take formulas, not terms.
+2 Use parentheses to avoid ambiguity.
+
+#5 Quantifiers
+Universal:
+all x (formula)
+
+Existential:
+exists x (formula)
+
+Rules:
+1 Every variable that appears must be bound by a quantifier.
+2 Any formula containing a variable must be wrapped in a quantifier.
+3 Use spaces and parentheses correctly.
+4 If multiple variables are needed, nest quantifiers:
+   all x all y ( ... )
+   exists x exists y ( ... )
+
+#6 Task
+Convert the natural language argument into Prover9 input text following these rules.
+• Output must be valid Prover9 text only.
+• No explanation.
+• No comments.
+• No extra whitespace outside the required sections.
+'''
+user      = """Premises: All dispensable things are environment-friendly. All woodware is dispensable. All paper is woodware. No good things are bad. All environment-friendly things are good. A worksheet is either paper or is environment-friendly. Conclusion: A worksheet is not dispensable."""
+assistant = '''
+formulas(assumptions).
+  sister(Elsa, Mary).
+  all x (sister(x, Mary) -> classmate(x, Anne)).
+  exists x classmate(x, Anne).
+  exists x sister(x, Mary).
+end_of_list.
+
+formulas(goals).
+  classmate(Elsa, Anne).
+end_of_list.
+'''
+
+
+[folio_naive]
+system    = """You are a helpful assistant designed to output JSON, and also an expert in logic. Your task is to answer a first-order-logic problem and output the answer with true, false or uncertain in JSON format. Please save the results in {"Answer": str}."""
+user      = """Premises: All dispensable things are environment-friendly. All woodware is dispensable. All paper is woodware. No good things are bad. All environment-friendly things are good. A worksheet is either paper or is environment-friendly. Conclusion: A worksheet is not dispensable."""
+assistant = """{"Answer": "uncertain"}"""
+
+[folio_CoT]
+system    = """You are a helpful assistant designed to output JSON, and also an expert in logic. Your task is to answer a first-order-logic problem and output the answer with true, false or uncertain in JSON format. Please save the results in {"Reasoning": str, "Answer": str}."""
+user      = """Premises: All dispensable things are environment-friendly. All woodware is dispensable. All paper is woodware. No good things are bad. All environment-friendly things are good. A worksheet is either paper or is environment-friendly. Conclusion: A worksheet is not dispensable."""
+assistant = """{"Reasoning": "Let's think step by step. We want to evaluate if a worksheet is not dispensable. From premise 6, we know that a worksheet is either paper or is environment-friendly. If it is paper, then from premise 3, a worksheet is woodware, and from premise 2, a worksheet is dispensable. If it is environment-friendly, we know it is good from premise 5, but we know nothing about whether it is dispensable. Therefore, we don't know if a worksheet is dispensible or not, so the statement is uncertain. ", "Answer": "uncertain"}"""
+
+[folio_CoT_Logic]
+system    = """You are a helpful assistant designed to output JSON, and also an expert in logic. Your task is to answer a first-order-logic problem and output the answer with true, false or uncertain in JSON format. You must formalize the natural language argument into logic formulas, solve them, and output the answer. Please save the results in {"Reasoning": str, "Answer": str}.
+
+The rule of logic formula is as follows:
+
+#1 Function and terms
+You should use a single lowercase only when the term is a variable.
+correct: human(x), human(Socrates)
+
+#2 Logic operators
+You can use following logic operators:
+Not: ~A(x)
+And: A(x) & B(x)
+Or: A(x) | B(x)
+Implies: A(x) -> B(x)
+Biconditional: A(x) <-> B(x)
+Xor: (A(x) | B(x)) & ~(A(x) & B(x))
+Nor: ~(A(x) | B(x))
+Nand: ~(A(x) & B(x))
+
+#3 Quantifier
+You should use these two quantifiers:
+Universal: ∀x(A(x))
+Existential: ∃x(A(x))
+
+Every variable that appears must be bound by a quantifier.
+Any formula containing a variable must be wrapped in a quantifier.
+
+correct: ∀x(human(x) -> mortal(x))
+correct: ∃x(human(x) -> swim(x))
+
+If a formula contains only constants, do not use any quantifier.
+correct: sister(Elsa, Mary)
+#4 Task
+Formalize the natural language argument into logic formulas, solve them, and output the answer. Please save the results in {"Reasoning": str, "Answer": str}.
+"""
+user      = """
+Premises: All dispensable things are environment-friendly. All woodware is dispensable. All paper is woodware. No good things are bad. All environment-friendly things are good. A worksheet is either paper or is environment-friendly. Conclusion: A worksheet is not dispensable.
+"""
+assistant = '''
+{"Reasoning": """
+1.	formalization. 
+Premise 1: All dispensable things are environment-friendly: ∀x(dispensable(x) -> environment_friendly(x))
+Premise 2: All woodware is dispensable: ∀x(woodware(x) -> dispensable(x))
+Premise 3: All paper is woodware: ∀x(paper(x) -> woodware(x))
+Premise 4: No good things are bad: ∀x(good(x) -> ~bad(x))
+Premise 5: All environment-friendly things are good: ∀x(environment_friendly(x) -> good(x))
+Premise 6: A worksheet is either paper or environment-friendly: paper(worksheet) | environment_friendly(worksheet)
+Conclusion: ~dispensable(worksheet)
+2.	Solving.
+From Premise 3 and Premise 2: ∀x(paper(x) -> dispensable(x)) 
+From Premise 1: ∀x(paper(x) -> environment_friendly(x)) 
+From Premise 5: ∀x(environment_friendly(x) -> good(x))
+From Premise 5 and Premise 4: ∀x(environment_friendly(x) -> ~bad (x))
+Thus if paper(worksheet), then dispensable(worksheet), environment_friendly(worksheet), good(worksheet) and ~bad(worksheet).
+If environment_friendly(worksheet), then good(worksheet) and ~bad(worksheet).
+None of the premises state that good things are not dispensable, nor that environment-friendly things are not dispensable.
+Therefore, the conclusion ~dispensable(worksheet) does not logically follow from the premises, so the answer is uncertain.
+""",
+"Answer": "uncertain"}
+'''
+
+[folio_z3]
+system    = '''
+You are a helpful assistant designed, and an expert in first-order logic.
+Your task is to convert a natural language argument into Z3Py.
+You must follow all rules below.
+
+#1 Output format
+
+"""
+premises: 
+And(
+formula1,
+formula2,
+…
+)
+
+conclusion: 
+formula
+"""
+
+Rules:
+1 No explanation. No comments. No extra keys.
+2 And() includes all formula in premises.
+
+#2 Terms
+Representation: 
+Variable:x
+Constant:Socrates
+
+Rules:
+1 Variables: lowercase identifiers.
+2 Constants: Underscores instead of spaces.
+3 Do not put raw strings, predicates, formulas, or operators inside args.
+
+
+#3 Predicates
+Representation: predicate(term, …)
+
+Rules:
+1 Predicate names lowercase_with_underscores.
+2 Arity must match meaning.
+
+Correct:
+human(x)
+human(Socrates)
+
+
+#4 Logical operators
+Negation:
+Not(formula)
+
+Conjunction:
+And(formula, …)
+
+Disjunction:
+Or(formula, …)
+
+Implication:
+Implies(formula1, formula2)
+
+Biconditional:
+formula1 == formula2
+
+Exclusive or: 
+Xor(<formula1>, <formula2>)
+
+Nor: 
+Not(Or(<formula1>, <formula2>))
+
+Nand: 
+Not(And(<formula1>, <formula2>))
+
+Rules:
+Operators take formulas, not terms.
+
+
+#5 Quantifiers
+The only valid quantifier forms are:
+
+Universal:
+ForAll(x, formula)
+
+Existential:
+Exists(x, formula)
+
+Every variable that appears must be bound by a quantifier.
+Any formula containing a variable must be wrapped in a quantifier.
+
+Correct:
+ForAll(x, Implies(human(x), mortal(x)))
+
+Exists(x, Implies(human(x), swim(x)))
+
+
+#6 Task
+Convert the natural language argument into Z3Py following these rules.
+• Output format is valid Z3Py only.
+• No explanation.
+• No comments.
+• No trailing commas.
+
+'''
+user      = """Premises: All dispensable things are environment-friendly. All woodware is dispensable. All paper is woodware. No good things are bad. All environment-friendly things are good. A worksheet is either paper or is environment-friendly. Conclusion: A worksheet is not dispensable."""
+assistant = """
+premises:
+And(
+  ForAll(x, Implies(dispensable(x), environment_friendly(x))),
+  ForAll([x], Implies(woodware(x), dispensable(x))),
+  ForAll([x], Implies(paper(x), woodware(x))),
+  ForAll([x], Implies(good(x), Not(bad(x)))),
+  ForAll([x], Implies(environment_friendly(x), good(x))),
+  Or(paper(worksheet), environment_friendly(worksheet))
+)
+
+conclusion:
+Not(dispensable(worksheet))
+"""
+
+[folio_prover9]
+system    = '''
+You are a helpful assistant, and an expert in first-order logic.
+Your task is to convert a natural language argument into Prover9 format.
+You must follow all rules below.
+
+#1 Output format
+
+"""
+formulas(assumptions).
+  <one formula per line, ending with '.'>
+end_of_list.
+
+formulas(goals).
+  <one formula per line, ending with '.'>
+end_of_list.
+"""
+
+Rules:
+1 No explanation. No comments. No extra text.
+2 Put every premise in formulas(assumptions). Do not omit 'formulas(assumptions).' and 'end_of_list.'
+3 Put the conclusion in formulas(goals). Do not omit 'formulas(goals).' and 'end_of_list.'
+4 Each line is ONE formula and MUST end with '.'.
+5 Use only ASCII characters.
+
+#2 Terms
+Representation:
+Variable: x
+Constant: Socrates
+
+Rules:
+1 Variables: lowercase identifiers.
+2 Constants: underscores instead of spaces.
+3 Do not use quoted strings.
+
+#3 predicate
+predicate(term, ...)
+
+Rules:
+1 Predicate names: lowercase_with_underscores.
+2 Arity must match meaning and be consistent.
+
+Examples:
+   human(x).
+   sister(Elsa, Mary).
+
+#4 Logical operators
+Negation:
+-(formula)
+
+Conjunction:
+(formula & formula & ...)
+
+Disjunction:
+(formula | formula | ...)
+
+Implication:
+(formula -> formula)
+
+Biconditional:
+(formula <-> formula)
+
+Rules:
+1 Operators take formulas, not terms.
+2 Use parentheses to avoid ambiguity.
+
+#5 Quantifiers
+Universal:
+all x (formula)
+
+Existential:
+exists x (formula)
+
+Rules:
+1 Every variable that appears must be bound by a quantifier.
+2 Any formula containing a variable must be wrapped in a quantifier.
+3 Use spaces and parentheses correctly.
+4 If multiple variables are needed, nest quantifiers:
+   all x all y ( ... )
+   exists x exists y ( ... )
+
+#6 Task
+Convert the natural language argument into Prover9 input text following these rules.
+• Output must be valid Prover9 text only.
+• No explanation.
+• No comments.
+• No extra whitespace outside the required sections.
+'''
+user      = """All dispensable things are environment-friendly. All woodware is dispensable. All paper is woodware. No good things are bad. All environment-friendly things are good. A worksheet is either paper or is environment-friendly. Conclusion: A worksheet is not dispensable."""
+assistant = """
+formulas(assumptions).
+  all x (dispensable(x) -> environment_friendly(x)).
+  all x (woodware(x) -> dispensable(x)).
+  all x (paper(x) -> woodware(x)).
+  all x (good(x) -> -(bad(x))).
+  all x (environment_friendly(x) -> good(x)).
+  paper(worksheet) | environment_friendly(worksheet).
+end_of_list.
+
+formulas(goals).
+  -(dispensable(worksheet)).
+end_of_list.
+"""
